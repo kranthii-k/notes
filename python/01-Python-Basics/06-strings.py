@@ -2,15 +2,15 @@
 # PROGRAM 1.6: STRINGS - Text Manipulation
 # ===================================================
 
-"""
-STRINGS IN PYTHON
-- Sequence of characters enclosed in quotes
-- Immutable (cannot be changed in place)
-- Can use single (''), double (""), or triple quotes (''' or """)
-- Support indexing and slicing
-- Extensive built-in methods for text processing
-- Essential for NLP, data cleaning, file handling
-"""
+# """
+# STRINGS IN PYTHON
+# - Sequence of characters enclosed in quotes
+# - Immutable (cannot be changed in place)
+# - Can use single (''), double (""), or triple quotes (''' or """)
+# - Support indexing and slicing
+# - Extensive built-in methods for text processing
+# - Essential for NLP, data cleaning, file handling
+# """
 
 # ===================================================
 # 1. CREATING STRINGS
@@ -534,22 +534,22 @@ print("15. PERFORMANCE TIPS")
 print("=" * 60)
 
 print("""
-✅ EFFICIENT String Operations:
+EFFICIENT String Operations:
    - Use f-strings for formatting (fastest)
    - Use str.join() for concatenating many strings
    - Use ''.join(list) instead of += in loops
    - Use str.replace() for simple substitutions
 
-❌ AVOID:
+AVOID:
    - Using + in loops for concatenation (slow)
    - Multiple replace() calls (use regex or dict)
    - Converting large strings unnecessarily
 
-💡 Best Practices:
-   ✓ Pre-compile regex patterns if using multiple times
-   ✓ Use string methods instead of regex when possible
-   ✓ Use list comprehensions for string transformations
-   ✓ Cache commonly used string results
+Best Practices:
+   - Pre-compile regex patterns if using multiple times
+   - Use string methods instead of regex when possible
+   - Use list comprehensions for string transformations
+   - Cache commonly used string results
 """)
 
 # Example: Efficient string building
