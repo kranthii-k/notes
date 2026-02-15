@@ -299,43 +299,130 @@ for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
     -   *BST*: If both < root, go left. If both > root, go right. Else root is split point.
     -   *Binary Tree*: Look left, look right. If both return non-null, root is LCA.
 
-### 7. Graphs
-*Nodes and edges.*
-- **Representation**:
-  - **Adjacency List** (Most common): `List<List<Integer>> adj = new ArrayList<>();`
-  - **Adjacency Matrix** (Dense graphs): `int[][] adj = new int[N][N];`
-- **Traversals**:
-  - **DFS**: Stack/Recursion. Exhausts one path.
-  - **BFS**: Queue. Shortest path in unweighted graph.
+### 7. Graphs (Deep Dive)
+**Nodes (V) and Edges (E)**.
+#### 🛠️ Representations
+-   **Adjacency List** (`O(V+E)` Space): `List<List<Integer>> graph = new ArrayList<>();`
+-   **Adjacency Matrix** (`O(V^2)` Space): `int[][] graph = new int[V][V];` (Fast lookups, heavy space).
 
-### 8. Advanced Data Structures
+#### ⚡ Essential Traversals
+1.  **DFS (Stack/Recursion)**:
+    -   *Use Case*: Reachability, Cycle Detection, Topological Sort.
+    ```java
+    void dfs(int u, boolean[] visited, List<List<Integer>> adj) {
+        visited[u] = true;
+        for (int v : adj.get(u)) {
+            if (!visited[v]) dfs(v, visited, adj);
+        }
+    }
+    ```
+2.  **BFS (Queue)**:
+    -   *Use Case*: Shortest Path in Unweighted Graph.
+    ```java
+    void bfs(int start, List<List<Integer>> adj) {
+        boolean[] visited = new boolean[V];
+        Queue<Integer> q = new LinkedList<>(); // LinkedList OK for BFS queue
+        q.offer(start); visited[start] = true;
+        while (!q.isEmpty()) {
+            int u = q.poll();
+            for (int v : adj.get(u)) {
+                if (!visited[v]) {
+                    visited[v] = true;
+                    q.offer(v);
+                }
+            }
+        }
+    }
+    ```
+
+3.  **Cycle Detection (Directed)**:
+    -   Use 3 states: `0` (Unvisited), `1` (Visiting/Recursion Stack), `2` (Visited).
+    -   If you hit a `1`, cycle found.
+
+---
+
+### 8. Advanced Data Structures (Deep Dive)
 <details>
-<summary>Click to expand Trie & Union-Find</summary>
+<summary><b>Trie (Prefix Tree) implementation</b></summary>
 
-#### Trie (Prefix Tree)
-Used for string search, prefix counting.
 ```java
-class TrieNode {
-    TrieNode[] children = new TrieNode[26];
-    boolean isEnd;
+class Trie {
+    class TrieNode {
+        TrieNode[] children = new TrieNode[26];
+        boolean isEnd;
+    }
+    TrieNode root = new TrieNode();
+
+    public void insert(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            if (node.children[c - 'a'] == null)
+                node.children[c - 'a'] = new TrieNode();
+            node = node.children[c - 'a'];
+        }
+        node.isEnd = true;
+    }
+
+    public boolean search(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            if (node.children[c - 'a'] == null) return false;
+            node = node.children[c - 'a'];
+        }
+        return node.isEnd;
+    }
 }
 ```
+</details>
 
-#### Disjoint Set (Union-Find)
-Used for connected components, cycle detection.
+<details>
+<summary><b>Disjoint Set (Union-Find) Optimized</b></summary>
+
+-   **Path Compression**: Point nodes directly to root during `find`.
+-   **Union by Rank**: Attach smaller tree to larger tree.
+-   **Time**: `O(α(N))` (Inverse Ackermann function) ≈ Constant.
+
 ```java
 class UnionFind {
-    int[] parent;
+    int[] parent, rank;
     public UnionFind(int n) {
         parent = new int[n];
+        rank = new int[n];
         for (int i=0; i<n; i++) parent[i] = i;
     }
     public int find(int x) {
-        if (parent[x] != x) parent[x] = find(parent[x]); // Path compression
+        if (parent[x] != x) parent[x] = find(parent[x]); // Path Compression
         return parent[x];
     }
-    public void union(int x, int y) {
-        parent[find(x)] = find(y);
+    public boolean union(int x, int y) {
+        int rootX = find(x), rootY = find(y);
+        if (rootX == rootY) return false; // Cycle detected / Already stored
+        // Union by Rank
+        if (rank[rootX] > rank[rootY]) parent[rootY] = rootX;
+        else if (rank[rootX] < rank[rootY]) parent[rootX] = rootY;
+        else {
+            parent[rootY] = rootX;
+            rank[rootX]++;
+        }
+        return true;
+    }
+}
+```
+</details>
+
+<details>
+<summary><b>Segment Tree (Range Sum Query)</b></summary>
+Used for Range Queries `O(log N)` and Point Updates `O(log N)`.
+
+```java
+int[] tree; // Size 4*N
+void build(int[] arr, int node, int start, int end) {
+    if (start == end) tree[node] = arr[start];
+    else {
+        int mid = (start + end) / 2;
+        build(arr, 2*node, start, mid);
+        build(arr, 2*node+1, mid+1, end);
+        tree[node] = tree[2*node] + tree[2*node+1];
     }
 }
 ```
@@ -345,22 +432,82 @@ class UnionFind {
 
 ## ⚡ Algorithms
 
-### 1. Sorting & Searching
-- **Sorting**: `O(N log N)` best.
-  - **Quick Sort**: Unstable, avg `O(N log N)`.
-  - **Merge Sort**: Stable, `O(N log N)`, `O(N)` space.
-  - **Java**: `Arrays.sort(primitive)` = Dual-Pivot Quicksort. `Collections.sort(obj)` = Timsort (Merge+Insertion).
-- **Binary Search**: Sorted arrays/monotonic functions.
+### 1. Sorting & Searching (Deep Dive)
+#### ⚔️ Sorting Algorithms
+1.  **Merge Sort** (`O(N log N)` Stable):
+    -   *Divide*: Split array in half. *Conquer*: Recursively sort. *Combine*: Merge sorted halves.
+    ```java
+    void mergeSort(int[] arr, int l, int r) {
+        if (l < r) {
+            int m = l + (r - l) / 2;
+            mergeSort(arr, l, m);
+            mergeSort(arr, m + 1, r);
+            merge(arr, l, m, r);
+        }
+    }
+    // Merge logic: Use temp array, copy back.
+    ```
+2.  **Quick Sort** (`O(N log N)` Unstable):
+    -   *Partition*: Pick pivot, move smaller to left, larger to right.
+    ```java
+    void quickSort(int[] arr, int low, int high) {
+        if (low < high) {
+            int pivotIndex = partition(arr, low, high);
+            quickSort(arr, low, pivotIndex - 1);
+            quickSort(arr, pivotIndex + 1, high);
+        }
+    }
+    int partition(int[] arr, int low, int high) {
+        int pivot = arr[high];
+        int i = (low - 1);
+        for (int j = low; j < high; j++) {
+            if (arr[j] < pivot) {
+                i++;
+                swap(arr, i, j);
+            }
+        }
+        swap(arr, i + 1, high);
+        return i + 1;
+    }
+    ```
+
+#### 🔎 Binary Search (Templates)
+**Pre-condition**: Array MUST be sorted.
+**Template 1: Standard (Find Exact)**
 ```java
-int binarySearch(int[] nums, int target) {
-    int left = 0, right = nums.length - 1;
-    while (left <= right) {
-        int mid = left + (right - left) / 2; // Prevent overflow
+int search(int[] nums, int target) {
+    int lo = 0, hi = nums.length - 1;
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;
         if (nums[mid] == target) return mid;
-        else if (nums[mid] < target) left = mid + 1;
-        else right = mid - 1;
+        else if (nums[mid] < target) lo = mid + 1;
+        else hi = mid - 1;
     }
     return -1;
+}
+```
+**Template 2: Lower Bound (First value >= target)**
+```java
+int lowerBound(int[] nums, int target) {
+    int lo = 0, hi = nums.length;
+    while (lo < hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (nums[mid] >= target) hi = mid;
+        else lo = mid + 1;
+    }
+    return lo; // Returns index of first element >= target
+}
+```
+**Template 3: Upper Bound (First value > target)**
+```java
+int upperBound(int[] nums, int target) {
+    int lo = 0, hi = nums.length;
+    while (lo < hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (nums[mid] > target) hi = mid;
+        else lo = mid + 1;
+    }
+    return lo;
 }
 ```
 
