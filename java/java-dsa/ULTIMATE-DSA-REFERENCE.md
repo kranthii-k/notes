@@ -511,59 +511,158 @@ int upperBound(int[] nums, int target) {
 }
 ```
 
-### 2. Graph Algorithms
+### 2. Graph Algorithms (Deep Dive)
 <details>
-<summary>Click to expand Dijkstra, Topo Sort, etc.</summary>
+<summary><b>Dijkstra's Algorithm (Shortest Path)</b></summary>
+*Weighted, Non-negative Graphs.* `O(E log V)`.
 
-#### Shortest Path (Dijkstra)
-For weighted, non-negative graphs.
 ```java
-// PQ stores [node, dist] sorted by dist
-PriorityQueue<int[]> pq = new PriorityQueue<>((a,b) -> a[1] - b[1]);
-pq.offer(new int[]{start, 0});
-// Use dist[] array initialized to MAX_VALUE
+public int[] dijkstra(int n, List<List<int[]>> adj, int src) {
+    int[] dist = new int[n];
+    Arrays.fill(dist, Integer.MAX_VALUE);
+    dist[src] = 0;
+    
+    // Min-Heap: [node, distance]
+    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]);
+    pq.offer(new int[]{src, 0});
+    
+    while (!pq.isEmpty()) {
+        int[] curr = pq.poll();
+        int u = curr[0], d = curr[1];
+        
+        if (d > dist[u]) continue; // Optimization: Skip stale nodes
+        
+        for (int[] edge : adj.get(u)) {
+            int v = edge[0], weight = edge[1];
+            if (dist[u] + weight < dist[v]) {
+                dist[v] = dist[u] + weight;
+                pq.offer(new int[]{v, dist[v]});
+            }
+        }
+    }
+    return dist;
+}
 ```
-
-#### Topological Sort (Kahn's Algorithm)
-For course schedule / dependency resolution (DAG).
-1. Compute in-degree for all nodes.
-2. Add nodes with `0` in-degree to Queue.
-3. Poll, reduce in-degree of neighbors. If neighbor becomes `0`, add to Queue.
 </details>
 
-### 3. Dynamic Programming (DP)
-*Break it down.*
-- **Top-Down (Memoization)**: Recursion + Cache (`Map` or `Array`).
-- **Bottom-Up (Tabulation)**: Iteration + Array.
-- **Common Patterns**:
-  - **1D**: Climbing Stairs, House Robber (`dp[i] = max(dp[i-1], dp[i-2] + nums[i])`).
-  - **2D**: LCS, Edit Distance, Knapsack (`dp[i][w]`).
-  - **Knapsack 0/1**: `dp[i][w] = max(dp[i-1][w], val[i] + dp[i-1][w-wt[i]])`.
-  - **Unbounded Knapsack**: Iterate items inner loop, capacity outer.
+<details>
+<summary><b>Topological Sort (Kahn's Algo)</b></summary>
+*DAGs Only. Course Schedule.* `O(V + E)`.
 
-### 4. Backtracking
-*Try everything.*
-**Template**:
 ```java
-void backtrack(path, options) {
-    if (goal reached) { result.add(path); return; }
-    for (choice : options) {
-        if (isValid(choice)) {
-            make(choice);
-            backtrack(newPath, options);
-            undo(choice); // Backtrack
+public int[] topoSort(int k, int[][] edges) {
+    List<List<Integer>> adj = new ArrayList<>();
+    int[] inDegree = new int[k + 1];
+    // Build Graph & In-Degree
+    for (int[] e : edges) {
+        adj.get(e[1]).add(e[0]);
+        inDegree[e[0]]++;
+    }
+    
+    Queue<Integer> q = new LinkedList<>();
+    for (int i = 1; i <= k; i++) 
+        if (inDegree[i] == 0) q.offer(i);
+        
+    int[] res = new int[k];
+    int idx = 0;
+    while (!q.isEmpty()) {
+        int u = q.poll();
+        res[idx++] = u;
+        for (int v : adj.get(u)) {
+            inDegree[v]--;
+            if (inDegree[v] == 0) q.offer(v);
+        }
+    }
+    return idx == k ? res : new int[0]; // Cycle detected if idx != k
+}
+```
+</details>
+
+<details>
+<summary><b>Minimum Spanning Tree (Prim's vs Kruskal)</b></summary>
+- **Prim's**: Like Dijkstra. Grow tree from source. Best for *Dense* graphs.
+- **Kruskal's**: Sort edges by weight. Union-Find to add if no cycle. Best for *Sparse* graphs.
+</details>
+
+### 3. Dynamic Programming (Deep Dive)
+**Memoization (Top-Down) vs Tabulation (Bottom-Up)**.
+State Definition is everything.
+
+#### ⚔️ Common Patterns
+1.  **0/1 Knapsack (Include/Exclude)**:
+    ```java
+    // dp[i][w] = Max value using first 'i' items with capacity 'w'
+    for (int i = 1; i <= n; i++) {
+        for (int w = 0; w <= capacity; w++) {
+            if (weights[i-1] <= w) 
+                dp[i][w] = Math.max(dp[i-1][w], values[i-1] + dp[i-1][w-weights[i-1]]);
+            else 
+                dp[i][w] = dp[i-1][w];
+        }
+    }
+    ```
+2.  **Longest Common Subsequence (LCS)**:
+    ```java
+    // dp[i][j] = LCS of text1[0..i] and text2[0..j]
+    if (text1.charAt(i-1) == text2.charAt(j-1))
+        dp[i][j] = 1 + dp[i-1][j-1];
+    else
+        dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+    ```
+3.  **Unbounded Knapsack (Coin Change)**:
+    -   Iterate `dp` array. Inner loop iterates coins.
+    ```java
+    Arrays.fill(dp, amount + 1); dp[0] = 0;
+    for (int i = 1; i <= amount; i++) {
+        for (int coin : coins) {
+            if (coin <= i) dp[i] = Math.min(dp[i], dp[i - coin] + 1);
+        }
+    }
+    ```
+
+### 4. Backtracking (Deep Dive)
+**Visualizing the Decision Tree**.
+#### 🧩 Template & N-Queens Example
+```java
+void solveNQueens(int row, char[][] board, List<List<String>> res) {
+    if (row == board.length) {
+        res.add(construct(board));
+        return;
+    }
+    for (int col = 0; col < board.length; col++) {
+        if (isValid(board, row, col)) {
+            board[row][col] = 'Q';
+            solveNQueens(row + 1, board, res);
+            board[row][col] = '.'; // Backtrack
         }
     }
 }
 ```
-**Examples**: N-Queens, Sudoku, Subsets, Permutations.
 
-### 5. Greedy & Maths
-- **Greedy**: Interval Scheduling (Sort by end time), Huffman Coding.
-- **Math**:
-  - **GCD**: `return b == 0 ? a : gcd(b, a % b);`
-  - **Sieve of Eratosthenes**: Find primes up to N.
-  - **Modulo**: `(a + b) % M`, `(a * b) % M`.
+### 5. Greedy & Maths (Deep Dive)
+#### 🧠 Greedy Logic
+-   **Structure**: Sort data -> Iterate -> make locally optimal choice.
+-   **Interval Scheduling**: Sort by **End Time**. Pick first, then pick next valid.
+-   **Merge Intervals**: Sort by **Start Time**.
+
+#### 🔢 Math Cheatsheet
+-   **GCD (Euclidean)**: `return b == 0 ? a : gcd(b, a % b);`
+-   **LCM**: `(a * b) / gcd(a, b)`
+-   **Prime Sieve (Sieve of Eratosthenes)**:
+    ```java
+    boolean[] isPrime = new boolean[n + 1];
+    Arrays.fill(isPrime, true);
+    for (int p = 2; p * p <= n; p++) {
+        if (isPrime[p]) {
+            for (int i = p * p; i <= n; i += p)
+                isPrime[i] = false;
+        }
+    }
+    ```
+-   **Modular Arithmetic** (Prevent Overflow):
+    -   `(a + b) % M`
+    -   `(a * b) % M`
+    -   **(a - b)**: `((a - b) % M + M) % M` (Java's `%` can be negative!)
 
 
 ---
