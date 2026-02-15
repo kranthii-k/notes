@@ -61,8 +61,6 @@
 
 ---
 
-## 🎯 Data Structures
-
 ## 🎯 Data Structures (The Arsenal)
 
 ### 1. Arrays & Strings (Deep Dive)
@@ -210,15 +208,6 @@ class ListNode {
 2.  **Median Finder**:
     -   Use two heaps: `maxPQ` (lower half) and `minPQ` (upper half).
     -   Keep sizes balanced. Median is `maxPQ.peek()` or `(maxPQ.peek() + minPQ.peek()) / 2.0`.
-
-### 5. Hash Maps & Sets
-*The O(1) magic.*
-- **HashMap**: `map.put(k, v)`, `map.get(k)`, `map.containsKey(k)`.
-- **HashSet**: `set.add(v)`, `set.contains(v)`.
-- **Tricks**:
-  - `map.getOrDefault(key, 0)` -> Very useful for frequency counting.
-  - `map.computeIfAbsent(key, k -> new ArrayList<>()).add(val)` -> Grouping.
-  - `for (Map.Entry<K, V> entry : map.entrySet())` -> Iterating.
 
 ### 5. Hash Maps & Sets (Deep Dive)
 **The O(1) Magic**. Key-Value definitions.
