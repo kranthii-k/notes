@@ -146,19 +146,70 @@ class ListNode {
     }
     ```
 
-### 3. Stacks & Queues
-*LIFO & FIFO.*
-- **Stack**: Use `ArrayDeque<Integer> stack = new ArrayDeque<>();`. methods: `push()`, `pop()`, `peek()`.
-- **Queue**: Use `ArrayDeque<Integer> queue = new ArrayDeque<>();`. methods: `offer()`, `poll()`, `peek()`.
-> [!NOTE]
-> `Stack` class is legacy. Use `ArrayDeque` (faster, no sync).
+### 3. Stacks & Queues (Deep Dive)
+**LIFO (Last-In-First-Out) & FIFO (First-In-First-Out)**.
 
-### 4. Heaps (Priority Queue)
-*Ordering the chaos.*
-- **Min-Heap** (Default): `PriorityQueue<Integer> pq = new PriorityQueue<>();`
-- **Max-Heap**: `PriorityQueue<Integer> pq = new PriorityQueue<>(Collections.reverseOrder());`
-- **Custom Object**: `new PriorityQueue<>((a, b) -> a.val - b.val);`
-- **Time**: Add/Poll `O(log N)`, Peek `O(1)`.
+#### 🛠️ Java `ArrayDeque<E>` (Recommended)
+- **Why not `Stack`?** `Stack` extends `Vector` and is `synchronized` (slow).
+- **Why not `LinkedList`?** `LinkedList` creates objects for every node -> heavy GC pressure. `ArrayDeque` uses a circular array buffer.
+- **Internals**: Circular array. Doubles capacity when full. `head` and `tail` pointers.
+- **Methods**:
+  - **Stack**: `push()`, `pop()`, `peek()`.
+  - **Queue**: `offer()`, `poll()`, `peek()`.
+
+#### ⚡ Essential Patterns
+1.  **Monotonic Stack** (Find Next Greater Element):
+    ```java
+    // Stores indices, keeping values in decreasing order
+    Deque<Integer> stack = new ArrayDeque<>();
+    for (int i = 0; i < nums.length; i++) {
+        while (!stack.isEmpty() && nums[stack.peek()] < nums[i]) {
+            int index = stack.pop();
+            result[index] = nums[i]; // nums[i] is Next Greater for nums[index]
+        }
+        stack.push(i);
+    }
+    ```
+2.  **BFS Queue (Level Order)**:
+    ```java
+    Deque<TreeNode> q = new ArrayDeque<>();
+    q.offer(root);
+    while (!q.isEmpty()) {
+        int size = q.size(); // Capture size for level processing
+        for (int i = 0; i < size; i++) {
+            TreeNode node = q.poll();
+            if (node.left != null) q.offer(node.left);
+            if (node.right != null) q.offer(node.right);
+        }
+    }
+    ```
+
+---
+
+### 4. Heaps (Priority Queue) (Deep Dive)
+**Under the Hood**: Complete Binary Tree backed by an array.
+- **Index Math**: For node at `i`:
+  - `Left Child`: `2*i + 1`
+  - `Right Child`: `2*i + 2`
+  - `Parent`: `(i - 1) / 2`
+- **Time Complexity**:
+  - `offer()` (Sift Up): `O(log N)`
+  - `poll()` (Sift Down): `O(log N)`
+  - `peek()`: `O(1)`
+  - **Build Heap**: `O(N)` (using siftDown from bottom-up), NOT `O(N log N)`.
+
+#### 🛠️ Java `PriorityQueue<E>`
+`PriorityQueue<Integer> minPQ = new PriorityQueue<>();` (Default Min-Heap)
+`PriorityQueue<Integer> maxPQ = new PriorityQueue<>((a, b) -> b - a);` (Max-Heap)
+
+#### ⚡ Essential Patterns
+1.  **Top K Elements**:
+    -   Keep a Min-Heap of size K.
+    -   If `nums[i] > pq.peek()`, `poll()` and `offer(nums[i])`.
+    -   At the end, Heap has the K largest elements.
+2.  **Median Finder**:
+    -   Use two heaps: `maxPQ` (lower half) and `minPQ` (upper half).
+    -   Keep sizes balanced. Median is `maxPQ.peek()` or `(maxPQ.peek() + minPQ.peek()) / 2.0`.
 
 ### 5. Hash Maps & Sets
 *The O(1) magic.*
@@ -169,15 +220,84 @@ class ListNode {
   - `map.computeIfAbsent(key, k -> new ArrayList<>()).add(val)` -> Grouping.
   - `for (Map.Entry<K, V> entry : map.entrySet())` -> Iterating.
 
-### 6. Trees (Binary & BST)
-*Recursive structures.*
+### 5. Hash Maps & Sets (Deep Dive)
+**The O(1) Magic**. Key-Value definitions.
+#### 🛠️ Internal Implementation (Java `HashMap`)
+-   **Concept**: Array of "Buckets" (Nodes). Index = `(n - 1) & hash`.
+-   **Collision Resolution**: **Separate Chaining** (LinkedList).
+-   **Java 8+ Optimization**: When a bucket has > 8 nodes, it converts from LinkedList to **Red-Black Tree** (`O(N)` -> `O(log N)`).
+-   **Load Factor**: Default `0.75`. Resizes (doubles) when `size > capacity * 0.75`. Rehashes all keys.
+
+#### 🔑 Key Methods
 ```java
-class TreeNode { int val; TreeNode left, right; TreeNode(int x) { val = x; } }
+// Grouping Anagrams
+Map<String, List<String>> map = new HashMap<>();
+// computeIfAbsent: "If key missing, put new ArrayList, then return it"
+map.computeIfAbsent(sortedKey, k -> new ArrayList<>()).add(originalString);
+
+// Frequency Count
+Map<Integer, Integer> counts = new HashMap<>();
+// getOrDefault: "Get count or 0"
+counts.put(num, counts.getOrDefault(num, 0) + 1);
+
+// Iterating Efficiently
+for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
+    int key = entry.getKey();
+    int val = entry.getValue();
+}
 ```
-- **Traversals**:
-  - **Inorder** (Left, Root, Right): Sorted order for BST.
-  - **Preorder** (Root, Left, Right): Serialization.
-  - **Postorder** (Left, Right, Root): Deleting, Bottom-up logic.
+
+---
+
+### 6. Trees (Binary, BST, AVL) (Deep Dive)
+**Hierarchical Data**.
+-   **Binary Search Tree (BST)**: Left < Root < Right.
+-   **Balanced Trees**: AVL, Red-Black (Java `TreeMap`/`TreeSet`).
+
+#### 🛠️ Traversals (The Holy Trinity)
+1.  **Level Order (BFS)**: Use Queue.
+2.  **Depth First Search (DFS)**:
+    ```java
+    // 1. Recursive
+    void dfs(TreeNode root) {
+        if (root == null) return;
+        // Preorder: process(root)
+        dfs(root.left);
+        // Inorder: process(root) -> Sorted for BST
+        dfs(root.right);
+        // Postorder: process(root) -> Delete/Bottom-up
+    }
+
+    // 2. Iterative Inorder (Stack)
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> res = new ArrayList<>();
+        Deque<TreeNode> stack = new ArrayDeque<>();
+        TreeNode curr = root;
+        while (curr != null || !stack.isEmpty()) {
+            while (curr != null) { // Go Left
+                stack.push(curr);
+                curr = curr.left;
+            }
+            curr = stack.pop(); // Process Node
+            res.add(curr.val);
+            curr = curr.right; // Go Right
+        }
+        return res;
+    }
+    ```
+
+#### ⚡ Essential Patterns
+-   **Validate BST**: Keep `min` and `max` boundaries.
+    ```java
+    boolean isValid(TreeNode node, long min, long max) {
+        if (node == null) return true;
+        if (node.val <= min || node.val >= max) return false;
+        return isValid(node.left, min, node.val) && isValid(node.right, node.val, max);
+    }
+    ```
+-   **Lowest Common Ancestor (LCA)**:
+    -   *BST*: If both < root, go left. If both > root, go right. Else root is split point.
+    -   *Binary Tree*: Look left, look right. If both return non-null, root is LCA.
 
 ### 7. Graphs
 *Nodes and edges.*
