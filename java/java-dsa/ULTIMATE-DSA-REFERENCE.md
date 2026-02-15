@@ -669,63 +669,134 @@ void solveNQueens(int row, char[][] board, List<List<String>> res) {
 
 ## 💻 Java Syntax & Tricks
 
-### 1. Collections Framework
-- **List**: `ArrayList` (Resizeable), `LinkedList` (Nodes).
-- **Set**: `HashSet` (Unordered), `TreeSet` (Sorted), `LinkedHashSet` (Order).
-- **Map**: `HashMap` (Unordered), `TreeMap` (Sorted Keys), `LinkedHashMap` (Order).
-- **Queue**: `LinkedList` or `PriorityQueue`.
-- **Deque**: `ArrayDeque` (Stack/Queue).
+### 1. Collections Framework (Deep Dive)
+-   **Structure**: `Iterable` -> `Collection` -> [`List`, `Set`, `Queue`]
+-   **Map** is separate!
+-   **Comparison**:
+    -   `Comparable<T>`: Implement `compareTo(T o)` in class. Natural ordering.
+    -   `Comparator<T>`: `(a, b) -> a - b`. Custom ordering.
 
-### 2. Essential Methods
-- **String**: `.length()`, `.charAt(i)`, `.substring(i, j)`, `.indexOf(s)`, `.toCharArray()`, `.trim()`, `.split(regex)`.
-- **Arrays**: `Arrays.sort()`, `Arrays.fill()`, `Arrays.equals()`, `Arrays.copyOf()`.
-- **Collections**: `Collections.sort()`, `Collections.reverse()`, `Collections.max()`.
-- **Math**: `Math.max(a, b)`, `Math.abs()`, `Math.pow()`, `Math.sqrt()`, `Math.floor()`.
-
-### 3. Stream API Wizardry
+### 2. Fast I/O (Competitive Programming)
+`Scanner` is slow (`O(N)` regex overhead). Use `BufferedReader`.
 ```java
-// Filter & Map
-List<String> result = list.stream()
-    .filter(s -> s.startsWith("A"))
-    .map(String::toUpperCase)
-    .collect(Collectors.toList());
-
-// Array to IntStream
-int sum = Arrays.stream(nums).sum();
+BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+StringTokenizer st = new StringTokenizer("");
+String next() throws IOException {
+    while (!st.hasMoreTokens()) st = new StringTokenizer(br.readLine());
+    return st.nextToken();
+}
+int nextInt() throws IOException { return Integer.parseInt(next()); }
 ```
 
-### 4. BigNumbers
-- **BigInteger**: `new BigInteger("123")`, `.add()`, `.multiply()`.
-- **BigDecimal**: Precision money math.
+### 3. Stream API Wizardry (Complex Examples)
+```java
+// Grouping: Map<Length, List<String>>
+Map<Integer, List<String>> groups = words.stream()
+    .collect(Collectors.groupingBy(String::length));
 
+// Partitioning: Map<Boolean, List<Integer>> (Even vs Odd)
+Map<Boolean, List<Integer>> evenOdd = nums.stream()
+    .collect(Collectors.partitioningBy(n -> n % 2 == 0));
+
+// Reduction: Sum of squares
+int sumSq = Arrays.stream(nums).map(n -> n * n).reduce(0, Integer::sum);
+```
+
+### 4. Bit Manipulation Sorcery
+-   **Check Odd**: `(n & 1) == 1`
+-   **Divide/Multiply by 2**: `n >> 1`, `n << 1`
+-   **Turn off rightmost 1-bit** (Brian Kernighan): `n & (n - 1)`
+-   **Get rightmost 1-bit**: `n & (-n)`
+-   **Swap**: `a ^= b; b ^= a; a ^= b;`
 
 ---
 
-## 🧠 Patterns & Meta-Skills
+## 🧠 Patterns & Meta-Skills (Deep Dive)
 
-### 1. Sliding Window
-- **Fixed Size**: Slide window, add right, remove left.
-- **Variable Size**: Expand `right`, shrink `left` while condition met (`while (invalid) left++`).
+### 1. Sliding Window (Template)
+**Variable Size Window (e.g., Longest Substring)**
+```java
+public int lengthOfLongestSubstring(String s) {
+    int[] map = new int[128];
+    int left = 0, right = 0, max = 0, counter = 0; // counter = distinct chars
+    
+    while (right < s.length()) {
+        char c1 = s.charAt(right);
+        if (map[c1] > 0) counter++; // Condition check
+        map[c1]++;
+        right++;
+        
+        while (counter > 0) { // Invalid state? Shrink left
+            char c2 = s.charAt(left);
+            if (map[c2] > 1) counter--;
+            map[c2]--;
+            left++;
+        }
+        max = Math.max(max, right - left);
+    }
+    return max;
+}
+```
 
-### 2. Two Pointers
-- **Converging**: `left = 0, right = n-1`. (e.g., 2Sum Sorted, Palindrome).
-- **Parallel**: `p1, p2` from start. (e.g., Merge Sorted Arrays).
+### 2. Two Pointers (Container With Most Water)
+```java
+int maxArea(int[] height) {
+    int l = 0, r = height.length - 1;
+    int max = 0;
+    while (l < r) {
+        max = Math.max(max, Math.min(height[l], height[r]) * (r - l));
+        if (height[l] < height[r]) l++;
+        else r--;
+    }
+    return max;
+}
+```
 
 ### 3. Fast & Slow Pointers (Tortoise & Hare)
-- **Cycle Detection**: Linked List cycle.
-- **Middle of List**: Slow moves 1, Fast moves 2.
+-   **Cycle Start Node**: 
+    1.  Detect cycle.
+    2.  Reset `slow` to head.
+    3.  Move both 1 step. Meeting point is Start.
 
-### 4. Monotonic Stack
-- **Next Greater Element**: Keep stack decreasing.
-- **Daily Temperatures**: Store indices.
+### 4. Monotonic Stack (Daily Temperatures)
+```java
+public int[] dailyTemperatures(int[] temps) {
+    int[] res = new int[temps.length];
+    Deque<Integer> stack = new ArrayDeque<>();
+    for (int i = 0; i < temps.length; i++) {
+        while (!stack.isEmpty() && temps[i] > temps[stack.peek()]) {
+            int idx = stack.pop();
+            res[idx] = i - idx;
+        }
+        stack.push(i);
+    }
+    return res;
+}
+```
 
-### 5. Top 'K' Elements
-- **Heap**: Use Min-Heap of size K to find Top K Largest.
-- **QuickSelect**: Average `O(N)` find Kth element.
+### 5. Top 'K' Elements (QuickSelect)
+Average `O(N)`, Worst `O(N^2)`.
+```java
+int quickSelect(int[] nums, int k, int l, int r) {
+    int p = partition(nums, l, r);
+    if (p > k) return quickSelect(nums, k, l, p - 1);
+    else if (p < k) return quickSelect(nums, k, p + 1, r);
+    else return nums[p];
+}
+```
 
 ### 6. Merge Intervals
-- **Sort**: Always sort by `start` time first.
-- **Iterate**: If `curr.start <= prev.end`, merge. Else add new.
+```java
+Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0]));
+LinkedList<int[]> merged = new LinkedList<>();
+for (int[] interval : intervals) {
+    if (merged.isEmpty() || merged.getLast()[1] < interval[0])
+        merged.add(interval);
+    else
+        merged.getLast()[1] = Math.max(merged.getLast()[1], interval[1]);
+}
+return merged.toArray(new int[merged.size()][]);
+```
 
 
 ---
