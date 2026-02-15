@@ -63,22 +63,88 @@
 
 ## 🎯 Data Structures
 
-### 1. Arrays & Strings
-*The bread and butter.*
-- **Java**: `int[] arr = new int[N];`, `Arrays.sort(arr)`, `Arrays.fill(arr, -1)`
-- **StringBuilder**: Always use for string concatenation in loops. `sb.append()`, `sb.reverse()`.
-- **2D Arrays**: `int[][] matrix = new int[R][C];`
-> [!TIP]
-> **Sliding Window**: Use for contiguous subarrays.
-> **Two Pointers**: Use for sorted arrays or palindrome checks.
+## 🎯 Data Structures (The Arsenal)
 
-### 2. Linked Lists
-*Nodes and pointers.*
+### 1. Arrays & Strings (Deep Dive)
+**Under the Hood**: Contiguous memory blocks. Random access `O(1)`. Fixed size.
+- **Memory Layout**: `[Header | Length | Element 0 | Element 1 | ...]`
+- **Cache Locality**: Excellent (CPU prefetching works best here).
+
+#### 🛠️ Java `ArrayList<E>` Internals
+- **Dynamic Resizing**: When full, creates new array of size `oldCapacity + (oldCapacity >> 1)` (approx 1.5x interaction).
+- **Time Complexity**:
+  - `get(i)`: `O(1)` - Direct memory offset.
+  - `add(e)`: `O(1)` amortized. Worst case `O(N)` when resizing.
+  - `remove(i)`: `O(N)` - Must shift subsequent elements.
+
+#### 🔑 Key Methods & Tricks
 ```java
-class ListNode { int val; ListNode next; ListNode(int x) { val = x; } }
+// Arrays Utility
+int[] arr = {5, 1, 9, 3};
+Arrays.sort(arr); // Dual-Pivot Quicksort O(N log N)
+Arrays.fill(arr, -1); // Initialize DP arrays
+// Copying (Native/Fastest)
+int[] copy = new int[arr.length];
+System.arraycopy(arr, 0, copy, 0, arr.length); 
+
+// Strings (Immutable)
+String s = "hello";
+char[] chars = s.toCharArray(); // Mutable char array
+// String Pool: s1 = "hi", s2 = "hi" -> s1 == s2 (true)
+// New Object: s1 = new String("hi") -> s1 == s2 (false)
+
+// StringBuilder (Mutable - Not Thread Safe but Faster)
+StringBuilder sb = new StringBuilder();
+sb.append("a").append("b"); // O(1) amortized
+sb.setCharAt(0, 'z');
+sb.reverse(); // In-place O(N)
 ```
-- **Dummy Node**: `ListNode dummy = new ListNode(0); dummy.next = head;` (Simplifies head edge cases).
-- **Fast & Slow Pointers**: Detect cycle (`Floyd's`), Find middle `slow = head, fast = head`.
+
+> [!IMPORTANT]
+> **String Concatenation**: Never use `s += "c"` in a loop! It creates `O(N^2)` garbage. Always use `StringBuilder`.
+
+---
+
+### 2. Linked Lists (Deep Dive)
+**Under the Hood**: Nodes scattered in memory. `O(N)` access.
+- **Java `LinkedList<E>`**: Doubly-linked list. Holds references to `prev` and `next`.
+- **Memory Overhead**: High (Node object + 2 references + data). ~24 bytes overhead per element (64-bit JVM).
+
+#### 🛠️ Internal Implementation (Doubly Linked)
+```java
+class ListNode {
+    int val;
+    ListNode next, prev;
+    ListNode(int x) { val = x; }
+}
+```
+
+#### ⚡ Essential Patterns
+1.  **Runner Technique (Fast & Slow)**:
+    -   *Cycle Detection*: `slow` moves 1 step, `fast` moves 2. If they meet, cycle exists.
+    -   *Middle Element*: When `fast` reaches end, `slow` is at middle.
+2.  **Dummy Pointer**:
+    -   Use `dummy.next` to handle edge cases where `head` might change (e.g., deleting head, merging lists).
+    ```java
+    ListNode dummy = new ListNode(0);
+    ListNode curr = dummy;
+    // ... operations ...
+    return dummy.next;
+    ```
+3.  **Reversing a List (Iterative)**:
+    ```java
+    public ListNode reverseList(ListNode head) {
+        ListNode prev = null;
+        ListNode curr = head;
+        while (curr != null) {
+            ListNode nextTemp = curr.next; // Save next
+            curr.next = prev;              // Reverse pointer
+            prev = curr;                   // Advance prev
+            curr = nextTemp;               // Advance curr
+        }
+        return prev; // New head
+    }
+    ```
 
 ### 3. Stacks & Queues
 *LIFO & FIFO.*
